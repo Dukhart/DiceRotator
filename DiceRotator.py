@@ -14,6 +14,7 @@ bl_info = {
 }
 
 import bpy
+import mathutils
 
 class DICEROTATOR_Dice():
     diceNumbers = [4,6,8,10,12,20]
@@ -28,6 +29,7 @@ class DICEROTATOR_Dice():
     def __init__(self, n, r):
         self.diceNumber = n
         self.rotation = r
+        self.default = r
         pass
     
     @classmethod
@@ -66,6 +68,9 @@ class DICEROTATOR_Dice():
             return True
         else:
             return False
+    
+    def reset(self):
+        self.rotation = self.default
     
     def getRotation(self, number):
         number = number-1
@@ -253,47 +258,58 @@ class DICEROTATOR_OT_calibrate(bpy.types.Operator):
     bl_label = "Calibrate"
     
     diceID: bpy.props.EnumProperty(items=DICEROTATOR_Dice.types, name='diceID')
+    rotType: bpy.props.EnumProperty(items=[('QUAT','Quat','Quaternion'),('EUL','Eul','Euler')], name='rotType')
     sideID: bpy.props.IntProperty(name='sideID', default=1, min=1)
+    
+    newW: bpy.props.FloatProperty(name='newW')
+    newX: bpy.props.FloatProperty(name='newX')
+    newY: bpy.props.FloatProperty(name='newY')
+    newZ: bpy.props.FloatProperty(name='newZ')
     
     def draw(self, context):
         layout = self.layout
+        
         row = layout.row()
         row.prop(self,'diceID')
         row.prop(self, 'sideID')
         if self.sideID > int(self.diceID):
             self.sideID = int(self.diceID)
+           
+        row = layout.row()
+        row.prop(self,'rotType', text='Rotation Type')
+        
+        s = 'bpy.types.Scene.dice_d' + self.diceID + ".rotation[self.sideID-1]"
+        r = eval(s)
+        r = mathutils.Quaternion(r)
+        row = layout.row()
+        if self.rotType == 'QUAT':
+            row.label(text='current: w ' + "{:.3f}".format(r.w) + ' x ' + "{:.3f}".format(r.x) + ' y ' + "{:.3f}".format(r.y) + ' z '  + "{:.3f}".format(r.z))
+        else:
+            row.label(text='current: x ' + "{:.3f}".format(r.to_euler().x) + ' y ' + "{:.3f}".format(r.to_euler().y) + ' z '  + "{:.3f}".format(r.to_euler().z))
         
         row = layout.row()
-        row.label(text='current: ')
-        
-        s = 'bpy.types.Scene.dice_d' + self.diceID
-        r = exec(s).rotation[self.sideID-1]
-        
-        row = layout.row()
-        row.label(text='new: ')
+        if self.rotType == 'QUAT':
+            row.prop(self, 'newW', text='w')
+        row.prop(self, 'newX', text='x')
+        row.prop(self, 'newY', text='y')
+        row.prop(self, 'newZ', text='z')
         
     
     def execute(self, context):
         print('calibrating')
-        '''
-        if self.sideID <= 0 or self.sideID > self.diceID:
-            return {'CANCELLED'}
-        if self.diceID == 4:
-            bpy.types.Scene.dice_d4.setRotation(self.sideID, r)
-        elif self.diceID == 6:
-            bpy.types.Scene.dice_d6.setRotation(self.sideID, r)
-        elif self.diceID == 8:
-            bpy.types.Scene.dice_d8.setRotation(self.sideID, r)
-        elif self.diceID == 10:
-            bpy.types.Scene.dice_d10.setRotation(self.sideID, r)
-        elif self.diceID == 12:
-            bpy.types.Scene.dice_d12.setRotation(self.sideID, r)
-        elif self.diceID == 20:
-            bpy.types.Scene.dice_d20.setRotation(self.sideID, r)
+        
+        if self.rotType == 'QUAT':
+            r = [self.newW, self.newX, self.newY, self.newZ]
+            pass
+        elif self.rotType == 'EUL':
+            r = [self.newX, self.newY, self.newZ]
+            r = mathutils.Euler(r).to_quaternion()
+            r = [r.w,r.x,r.y,r.z]
+            pass
         else:
-            self.report({'ERROR'},"diceID not recognized")
             return {'CANCELLED'}
-        '''
+        s = "bpy.types.Scene.dice_d" + str(self.diceID) + ".setRotation(" + str(self.sideID) + ", r)"
+        r = eval(s)
         return {'FINISHED'}
     
     def invoke(self, context, event):
@@ -304,14 +320,24 @@ class DICEROTATOR_OT_calibrate(bpy.types.Operator):
             i = DICEROTATOR_Dice.getDiceNum(name)
         if DICEROTATOR_Dice.isDiceNumber(i):
             self.diceID = str(i)
+        
+        s = 'bpy.types.Scene.dice_d' + self.diceID + ".rotation[self.sideID-1]"
+        r = eval(s)
+        r = mathutils.Quaternion(r)
+        
+        self.newW = r.w
+        self.newX = r.x
+        self.newY = r.y
+        self.newZ = r.z
+        
         wm = context.window_manager
-        return wm.invoke_props_dialog(self)
+        return wm.invoke_props_dialog(self, width=500)
 
 
-class DICEROTATOR_PT_Panel(bpy.types.Panel):
+class DICEROTATOR_PT_panel(bpy.types.Panel):
     """Rotates Dice to set number"""
     bl_label = "Dice Rotator"
-    bl_idname = "DICEROTATOR_PT_Pane"
+    bl_idname = "DICEROTATOR_PT_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'Tool'
@@ -348,7 +374,7 @@ class DICEROTATOR_PT_Panel(bpy.types.Panel):
     
     
 DICEROTATOR_classes = (
-    DICEROTATOR_PT_Panel,
+    DICEROTATOR_PT_panel,
     DICEROTATOR_MT_sides,
     DICEROTATOR_OT_rotate,
     DICEROTATOR_OT_calibrate,
