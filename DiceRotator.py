@@ -90,8 +90,7 @@ class DICEROTATOR_Dice():
             item.y = i[2]
             item.z = i[3]
             
-            
-    @classmethod
+    @classmethod        
     def build(cls):
         sNum = str(cls.diceNumber)
         s = "bpy.context.scene.dice_d" + sNum
@@ -202,6 +201,13 @@ class DICEROTATOR_D20(DICEROTATOR_Dice):
     def __init__(self):
         super().__init__()
 
+def buildDice():
+    DICEROTATOR_D4.build()
+    DICEROTATOR_D6.build()
+    DICEROTATOR_D8.build()
+    DICEROTATOR_D10.build()
+    DICEROTATOR_D12.build()
+    DICEROTATOR_D20.build()
 
 class DICEROTATOR_OT_rotate(bpy.types.Operator):
     """Rotates the dice to given side"""
@@ -379,6 +385,7 @@ class DICEROTATOR_PT_panel(bpy.types.Panel):
     bl_category = 'Tool'
     
     def __init__(self):
+        buildDice()
         pass
         
     @classmethod
@@ -440,14 +447,6 @@ def register():
     bpy.types.Scene.dice_d10 = bpy.props.CollectionProperty(type=DICEROTATOR_rotation)
     bpy.types.Scene.dice_d12 = bpy.props.CollectionProperty(type=DICEROTATOR_rotation)
     bpy.types.Scene.dice_d20 = bpy.props.CollectionProperty(type=DICEROTATOR_rotation)
-    
-    DICEROTATOR_D4.build()
-    DICEROTATOR_D6.build()
-    DICEROTATOR_D8.build()
-    DICEROTATOR_D10.build()
-    DICEROTATOR_D12.build()
-    DICEROTATOR_D20.build()
-    
 
 def unregister():
     del bpy.types.Scene.dice_d4
@@ -460,7 +459,6 @@ def unregister():
     #register classes
     for cls in DICEROTATOR_classes:
         bpy.utils.unregister_class(cls)
-    
     
     
 if __name__=='__main__':
