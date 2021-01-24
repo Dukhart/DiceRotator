@@ -9,7 +9,7 @@ our dice models available from <a href="https://www.turbosquid.com/FullPreview/I
 
 Plugin identifies dice by checking if the name starts with a 'D' or contains the word 'Dice' (<strong>not</strong> case sensitive). the type of dice will then be determined by the <strong>first</strong> number in the object's name. The rotator panel will only appear if a valid dice name is detected.
 
-Dice rotations may be recalibrated to custmom values, and reset to defaults by pressing the default button in the calibrate menu.
+Dice rotations may be recalibrated to custom values, and reset to defaults by pressing the default button in the calibrate menu.
 
 Current valid dice list:
 <ul>
